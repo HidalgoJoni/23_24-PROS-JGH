@@ -21,7 +21,7 @@ void crearHijos(int n, pid_t padre) {
 }
 
 int main() {
-    int n = 5; // Cambia este valor para ajustar el número de hijos
+    int n = 4; // Cambia este valor para ajustar el número de hijos
 
     printf("Soy el proceso padre con PID %d\n", getpid());
 
