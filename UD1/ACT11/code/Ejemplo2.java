@@ -1,4 +1,4 @@
-package ejer11;
+package actividad11;
 
 import java.io.*;
 
@@ -30,4 +30,3 @@ public class Ejemplo2 {
 		}
 	}
 }
-

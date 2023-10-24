@@ -1,13 +1,12 @@
-package ejer11;
+package actividad11;
 
 import java.io.*;
-
-public class Ejercicio11 {
+public class Actividad11 {
     public static void main(String[] args) {
         Runtime r = Runtime.getRuntime();
-        String comando = "java Ejemplo2"; // Cambiamos el valor asignado a la variable comando para ejecutar Ejemplo2
-
+        String comando = "java Ejemplo2.java"; // Cambiamos el valor asignado a la variable comando para ejecutar Ejemplo2
         Process p = null;
+        
         try {
             p = r.exec(comando);
             InputStream is = p.getInputStream();
@@ -19,7 +18,7 @@ public class Ejercicio11 {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
+        
         // Comprobación: Valor= 0 bien, Valor = -1 mal
         int exitVal;
         try {
