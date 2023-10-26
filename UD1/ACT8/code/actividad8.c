@@ -1,83 +1,78 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
-#include <sys/wait.h>
+#include <string.h>
 
 int main() {
     int fd1[2], fd2[2];
-    pid_t hijo, nieto;
+    pid_t p;
 
     // Crear los pipes
-    if (pipe(fd1) == -1 || pipe(fd2) == -1) {
-        fprintf(stderr, "Fallo en pipe");
+    if (pipe(fd1) == -1) {
+        fprintf(stderr, "Pipe Failed");
+        return 1;
+    }
+    if (pipe(fd2) == -1) {
+        fprintf(stderr, "Pipe Failed");
         return 1;
     }
 
-    hijo = fork();
-    if (hijo < 0) {
-        fprintf(stderr, "Fallo en fork");
-        return 1;
-    }
+    p = fork();
 
-    if (hijo > 0) {  // Proceso Abuelo
-        close(fd1[0]);  // Cierra el extremo de lectura del pipe fd1
+    // Proceso abuelo
+    if (p > 0) {
+        char buff[100];
 
-        char saludo_abuelo[] = "Saludo del abuelo";
+        close(fd1[0]);  // Cerrar el extremo de lectura del primer pipe
+        write(fd1[1], "Saludo del abuelo", strlen("Saludo del abuelo") + 1);
         printf("El ABUELO envía un mensaje al HIJO...\n");
-        write(fd1[1], saludo_abuelo, strlen(saludo_abuelo) + 1);
-        close(fd1[1]);  // Cierra el extremo de escritura del pipe fd1
+        close(fd1[1]);
 
-        // Espera a que el proceso hijo termine
-        wait(NULL);
+        wait(NULL);  // Esperar a que el hijo termine
 
-        close(fd2[1]);  // Cierra el extremo de escritura del pipe fd2
+        close(fd2[1]); // Cerrar el extremo de escritura del segundo pipe
+        read(fd2[0], buff, sizeof(buff));
+        printf("El ABUELO recibe mensaje del HIJO: %s\n", buff);
+        close(fd2[0]);
+    }
+    // Proceso hijo
+    else {
+        pid_t p2 = fork();
 
-        char buffer[100];
-        read(fd2[0], buffer, sizeof(buffer));
-        printf("El ABUELO recibe mensaje del HIJO: %s\n", buffer);
+        if (p2 > 0) {
+            char buff[100];
 
-    } else {  // Proceso Hijo
-        close(fd1[1]);  // Cierra el extremo de escritura del pipe fd1
+            close(fd1[1]);  // Cerrar el extremo de escritura del primer pipe
+            read(fd1[0], buff, sizeof(buff));
+            printf("\tEl HIJO recibe mensaje del ABUELO: %s\n", buff);
+            close(fd1[0]);
 
-        char buffer[100];
-        read(fd1[0], buffer, sizeof(buffer));
-        printf("\tEl HIJO recibe mensaje del ABUELO: %s\n", buffer);
-
-        nieto = fork();
-        if (nieto < 0) {
-            fprintf(stderr, "Fallo en fork");
-            return 1;
-        }
-
-        if (nieto > 0) {  // Proceso Hijo
-            close(fd2[0]);  // Cierra el extremo de lectura del pipe fd2
-
-            char saludo_hijo[] = "Saludo del hijo";
+            close(fd2[0]);  // Cerrar el extremo de lectura del segundo pipe
+            write(fd2[1], "Saludo del padre", strlen("Saludo del padre") + 1);
             printf("\tEl HIJO envía un mensaje al NIETO...\n");
-            write(fd2[1], saludo_hijo, strlen(saludo_hijo) + 1);
-            close(fd2[1]);  // Cierra el extremo de escritura del pipe fd2
 
-            // Espera a que el proceso nieto termine
-            wait(NULL);
+            wait(NULL);  // Esperar a que el nieto termine
 
-            read(fd2[0], buffer, sizeof(buffer));
-            printf("\tEl HIJO recibe mensaje del NIETO: %s\n", buffer);
+            read(fd1[0], buff, sizeof(buff));
+            printf("\tEl HIJO recibe mensaje de su hijo: %s\n", buff);
+            close(fd1[0]);
 
-            char respuesta_hijo[] = "Respuesta del hijo";
+            write(fd2[1], "Saludo del hijo", strlen("Saludo del hijo") + 1);
             printf("\tEl HIJO envía un mensaje al ABUELO...\n");
-            write(fd1[1], respuesta_hijo, strlen(respuesta_hijo) + 1);
+            close(fd2[1]);
+        }
+        // Proceso nieto
+        else {
+            char buff[100];
 
-        } else {  // Proceso Nieto
-            close(fd2[1]);  // Cierra el extremo de escritura del pipe fd2
+            close(fd2[1]);  // Cerrar el extremo de escritura del segundo pipe
+            read(fd2[0], buff, sizeof(buff));
+            printf("\t\tEl NIETO recibe mensaje del PADRE: %s\n", buff);
+            close(fd2[0]);
 
-            char buffer[100];
-            read(fd2[0], buffer, sizeof(buffer));
-            printf("\t\tEl NIETO recibe mensaje del HIJO: %s\n", buffer);
-
-            char respuesta_nieto[] = "Respuesta del nieto";
+            write(fd1[1], "Saludo del nieto", strlen("Saludo del nieto") + 1);
             printf("\t\tEl NIETO envía un mensaje al HIJO...\n");
-            write(fd2[1], respuesta_nieto, strlen(respuesta_nieto) + 1);
+            close(fd1[1]);
         }
     }
 
